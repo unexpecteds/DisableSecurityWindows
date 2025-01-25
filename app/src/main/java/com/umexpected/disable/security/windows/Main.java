@@ -2,6 +2,7 @@ package com.unexpected.hook.disable.security.windows;
 
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import de.robv.android.xposed.IXposedHookLoadPackage;
@@ -22,6 +23,17 @@ public class Main implements IXposedHookLoadPackage {
                     param.args[0] = flags;
                 }
             });
+        XC_MethodHook methodHook = new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(XC_MethodHook.MethodHookParam param) throws Throwable {
+                if(param.args[1] instanceof WindowManager.LayoutParams) {
+                    WindowManager.LayoutParams params = (WindowManager.LayoutParams) param.args[1];
+                    params.flags &= ~ WindowManager.LayoutParams.FLAG_SECURE;
+                }
+            }
+        };
+        XposedHelpers.findAndHookMethod("android.view.WindowManagerImpl", lpparam.classLoader, "addView", View.class, ViewGroup.LayoutParams.class, methodHook);
+        XposedHelpers.findAndHookMethod("android.view.WindowManagerImpl", lpparam.classLoader, "updateViewLayout", View.class, ViewGroup.LayoutParams.class, methodHook);
         // 禁用安全视图
         XposedHelpers.findAndHookMethod(SurfaceView.class, "setSecure", boolean.class, new XC_MethodHook() {
                 @Override
